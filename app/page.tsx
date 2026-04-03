@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const THEMES = [
   { id: 'business', label: 'Business', icon: '💼', description: 'Boardroom ready?' },
@@ -14,6 +16,7 @@ const THEMES = [
 ]
 
 const STARS = [1, 2, 3, 4, 5]
+const FREE_LIMIT = 3
 
 const VIVIENNE_RULES = [
   "Fashion is not about comfort. It is about power.",
@@ -54,6 +57,7 @@ function ViviennePortrait({ size = 120 }: { size?: number }) {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null)
   const [image, setImage] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -66,9 +70,66 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [ruleIndex, setRuleIndex] = useState(0)
 
+  // Auth state
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [usageCount, setUsageCount] = useState(0)
+  const [usageLoading, setUsageLoading] = useState(false)
+
   useEffect(() => {
     setRuleIndex(Math.floor(Math.random() * VIVIENNE_RULES.length))
   }, [])
+
+  // Check auth on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth')
+        return
+      }
+      setUserEmail(session.user.email ?? null)
+      setAccessToken(session.access_token)
+      setAuthLoading(false)
+      fetchUsageCount(session.access_token)
+    }
+
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.push('/auth')
+      } else {
+        setUserEmail(session.user.email ?? null)
+        setAccessToken(session.access_token)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [router])
+
+  const fetchUsageCount = async (token: string) => {
+    setUsageLoading(true)
+    try {
+      const res = await fetch('/api/usage', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setUsageCount(data.count)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setUsageLoading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/auth')
+  }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -88,7 +149,11 @@ export default function Home() {
   })
 
   const handleSubmit = async () => {
-    if (!image || !imageFile || !selectedTheme) return
+    if (!image || !imageFile || !selectedTheme || !accessToken) return
+    if (usageCount >= FREE_LIMIT) {
+      setError('今月の無料評価（3回）を使い切りました。来月またお試しください。')
+      return
+    }
     setLoading(true)
     setError(null)
 
@@ -99,13 +164,20 @@ export default function Home() {
 
       const res = await fetch('/api/evaluate', {
         method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
       })
 
+      if (res.status === 403) {
+        setError('今月の無料評価（3回）を使い切りました。来月またお試しください。')
+        setUsageCount(FREE_LIMIT)
+        return
+      }
       if (!res.ok) throw new Error('Evaluation failed')
       const data = await res.json()
       setResult(data)
-    } catch (err) {
+      setUsageCount(prev => prev + 1)
+    } catch {
       setError('Something went wrong. Even Vivienne has bad days.')
     } finally {
       setLoading(false)
@@ -119,6 +191,16 @@ export default function Home() {
     setSelectedTheme(null)
     setError(null)
   }
+
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-black flex items-center justify-center">
+        <p className="font-serif text-zinc-600 italic text-lg">Vivienne is preparing...</p>
+      </main>
+    )
+  }
+
+  const remaining = Math.max(0, FREE_LIMIT - usageCount)
 
   return (
     <main className="min-h-screen bg-black">
@@ -134,12 +216,45 @@ export default function Home() {
               Fashion, Rated
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-zinc-500 text-xs tracking-widest uppercase">By</p>
-            <p className="font-serif text-zinc-300 text-sm tracking-widest uppercase">Vivienne</p>
+          <div className="text-right flex flex-col items-end gap-2">
+            <div>
+              <p className="text-zinc-500 text-xs tracking-widest uppercase">By</p>
+              <p className="font-serif text-zinc-300 text-sm tracking-widest uppercase">Vivienne</p>
+            </div>
+            {userEmail && (
+              <div className="text-right">
+                <p className="text-zinc-600 text-xs truncate max-w-[140px]">{userEmail}</p>
+                <button
+                  onClick={handleLogout}
+                  className="text-zinc-700 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Usage Banner */}
+      <div className={`border-b px-6 py-3 ${remaining === 0 ? 'border-red-900 bg-red-950' : 'border-zinc-900 bg-zinc-950'}`}>
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <p className="text-xs tracking-[0.2em] uppercase">
+            {usageLoading ? (
+              <span className="text-zinc-600">Loading...</span>
+            ) : remaining === 0 ? (
+              <span className="text-red-400">今月の無料評価（3回）を使い切りました</span>
+            ) : (
+              <span className="text-zinc-500">
+                今月の残り評価: <span className="text-white font-bold">{remaining}</span> / {FREE_LIMIT}
+              </span>
+            )}
+          </p>
+          {remaining === 0 && (
+            <span className="text-gold-500 text-xs tracking-widest uppercase">Upgrade → $4.99/mo</span>
+          )}
+        </div>
+      </div>
 
       <div className="max-w-2xl mx-auto px-6 py-10">
 
@@ -163,19 +278,19 @@ export default function Home() {
               </div>
               <div className="text-center mb-8">
                 <span className="font-serif text-white text-4xl block leading-none mb-1">{result.stars} <span className="text-zinc-600 text-2xl">/ 5</span></span>
-                <span className="font-serif text-zinc-500 text-xs tracking-[0.25em] uppercase">Vivienne's Verdict</span>
+                <span className="font-serif text-zinc-500 text-xs tracking-[0.25em] uppercase">Vivienne&apos;s Verdict</span>
               </div>
 
               <hr className="gold-divider" />
 
               <blockquote className="font-serif text-xl text-zinc-100 italic leading-relaxed my-8 text-center">
-                "{result.comment}"
+                &ldquo;{result.comment}&rdquo;
               </blockquote>
               <p className="text-center text-zinc-600 text-xs tracking-[0.3em] uppercase">— Vivienne</p>
 
               {result.advice && (
                 <div className="mt-8 px-6 py-5 bg-zinc-950 border-l-2 border-gold-600 text-left">
-                  <p className="text-gold-500 text-xs tracking-[0.3em] uppercase mb-3">Vivienne's Advice</p>
+                  <p className="text-gold-500 text-xs tracking-[0.3em] uppercase mb-3">Vivienne&apos;s Advice</p>
                   <p className="text-zinc-300 text-sm leading-relaxed">{result.advice}</p>
                 </div>
               )}
@@ -192,10 +307,10 @@ export default function Home() {
             <div className="p-6 border border-gold-600 border-opacity-20 bg-zinc-950 mb-6 text-center">
               <p className="text-xs tracking-[0.3em] uppercase text-gold-500 mb-2">Premium Access</p>
               <p className="text-zinc-400 text-sm mb-5 leading-relaxed">
-                Vivienne has more to say. Unlock detailed scores for outfit, accessories, bag & makeup — plus her personal improvement advice.
+                Unlock unlimited monthly evaluations with Vivienne&apos;s full verdict.
               </p>
               <button className="btn-gold w-full py-4 text-sm tracking-widest">
-                Unlock Full Verdict — $4.99/mo
+                Unlock Full Access — $4.99/mo
               </button>
             </div>
 
@@ -229,7 +344,7 @@ export default function Home() {
               <hr className="gold-divider" />
 
               <blockquote className="font-serif text-2xl text-zinc-100 italic leading-relaxed my-8 px-4">
-                "Impress me. I've been waiting."
+                &ldquo;Impress me. I&apos;ve been waiting.&rdquo;
               </blockquote>
 
               <p className="text-zinc-500 text-sm leading-relaxed mb-8 max-w-md mx-auto">
@@ -301,9 +416,9 @@ export default function Home() {
             {/* Submit */}
             <button
               onClick={handleSubmit}
-              disabled={!image || !selectedTheme || loading}
+              disabled={!image || !selectedTheme || loading || remaining === 0}
               className={`w-full py-5 text-sm tracking-[0.3em] uppercase font-bold transition-all ${
-                image && selectedTheme && !loading
+                image && selectedTheme && !loading && remaining > 0
                   ? 'btn-gold'
                   : 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
               }`}
@@ -313,6 +428,8 @@ export default function Home() {
                   <span className="animate-spin text-lg">◐</span>
                   <span className="font-serif italic">Vivienne is deliberating...</span>
                 </span>
+              ) : remaining === 0 ? (
+                'No Evaluations Remaining This Month'
               ) : (
                 'Submit to Vivienne'
               )}

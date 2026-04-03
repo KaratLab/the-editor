@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+const FREE_LIMIT = 3
 
 const THEME_CONTEXT: Record<string, string> = {
   business: 'a professional business / corporate office environment',
@@ -44,6 +50,43 @@ Be Vivienne. The verdict is harsh. The advice is kind.
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify auth token
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } }
+    })
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Check monthly usage limit
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { count, error: countError } = await supabase
+      .from('evaluations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', startOfMonth.toISOString())
+
+    if (countError) throw countError
+
+    if ((count ?? 0) >= FREE_LIMIT) {
+      return NextResponse.json(
+        { error: 'Monthly limit reached' },
+        { status: 403 }
+      )
+    }
+
+    // Process image
     const formData = await request.formData()
     const imageFile = formData.get('image') as File
     const theme = formData.get('theme') as string
@@ -90,9 +133,17 @@ export async function POST(request: NextRequest) {
     if (!jsonMatch) throw new Error('Invalid response format')
 
     const result = JSON.parse(jsonMatch[0])
+    const stars = Math.min(5, Math.max(1, parseInt(result.stars)))
+
+    // Save evaluation to database
+    await supabase.from('evaluations').insert({
+      user_id: user.id,
+      theme,
+      stars,
+    })
 
     return NextResponse.json({
-      stars: Math.min(5, Math.max(1, parseInt(result.stars))),
+      stars,
       comment: result.comment,
       advice: result.advice,
     })
