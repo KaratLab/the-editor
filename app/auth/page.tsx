@@ -79,7 +79,8 @@ export default function AuthPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-700 text-white px-4 py-3 text-sm focus:outline-none focus:border-yellow-700 transition-colors"
-                placeholder="••••••••"
+                placeholder=""
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 required
                 minLength={6}
               />

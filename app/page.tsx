@@ -177,6 +177,7 @@ export default function Home() {
       const data = await res.json()
       setResult(data)
       setUsageCount(prev => prev + 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
       setError('Something went wrong. Even Vivienne has bad days.')
     } finally {
