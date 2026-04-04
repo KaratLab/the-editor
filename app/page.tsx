@@ -193,6 +193,22 @@ export default function Home() {
     setError(null)
   }
 
+  const handleUpgrade = async () => {
+    if (!accessToken) return
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setError('Failed to start upgrade process. Please try again.')
+    }
+  }
+
   if (authLoading) {
     return (
       <main className="min-h-screen bg-black flex items-center justify-center">
@@ -252,7 +268,7 @@ export default function Home() {
             )}
           </p>
           {remaining === 0 && (
-            <span className="text-gold-500 text-xs tracking-widest uppercase">Upgrade → $4.99/mo</span>
+            <button onClick={handleUpgrade} className="text-gold-500 text-xs tracking-widest uppercase hover:text-gold-400 transition-colors">Upgrade → $4.99/mo</button>
           )}
         </div>
       </div>
@@ -310,7 +326,7 @@ export default function Home() {
               <p className="text-zinc-400 text-sm mb-5 leading-relaxed">
                 Unlock unlimited monthly evaluations with Vivienne&apos;s full verdict.
               </p>
-              <button className="btn-gold w-full py-4 text-sm tracking-widest">
+              <button onClick={handleUpgrade} className="btn-gold w-full py-4 text-sm tracking-widest">
                 Unlock Full Access — $4.99/mo
               </button>
             </div>
