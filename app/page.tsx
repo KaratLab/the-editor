@@ -76,6 +76,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(true)
   const [usageCount, setUsageCount] = useState(0)
   const [usageLoading, setUsageLoading] = useState(false)
+  const [isPremium, setIsPremium] = useState(false)
 
   useEffect(() => {
     setRuleIndex(Math.floor(Math.random() * VIVIENNE_RULES.length))
@@ -118,6 +119,7 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json()
         setUsageCount(data.count)
+        setIsPremium(data.isPremium ?? false)
       }
     } catch {
       // ignore
@@ -150,7 +152,7 @@ export default function Home() {
 
   const handleSubmit = async () => {
     if (!image || !imageFile || !selectedTheme || !accessToken) return
-    if (usageCount >= FREE_LIMIT) {
+    if (!isPremium && usageCount >= FREE_LIMIT) {
       setError('今月の無料評価（3回）を使い切りました。来月またお試しください。')
       return
     }
@@ -217,7 +219,7 @@ export default function Home() {
     )
   }
 
-  const remaining = Math.max(0, FREE_LIMIT - usageCount)
+  const remaining = isPremium ? Infinity : Math.max(0, FREE_LIMIT - usageCount)
 
   return (
     <main className="min-h-screen bg-black">
@@ -254,11 +256,13 @@ export default function Home() {
       </header>
 
       {/* Usage Banner */}
-      <div className={`border-b px-6 py-3 ${remaining === 0 ? 'border-red-900 bg-red-950' : 'border-zinc-900 bg-zinc-950'}`}>
+      <div className={`border-b px-6 py-3 ${!isPremium && remaining === 0 ? 'border-red-900 bg-red-950' : 'border-zinc-900 bg-zinc-950'}`}>
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <p className="text-xs tracking-[0.2em] uppercase">
             {usageLoading ? (
               <span className="text-zinc-600">Loading...</span>
+            ) : isPremium ? (
+              <span className="text-gold-500">✦ Premium — Unlimited Evaluations</span>
             ) : remaining === 0 ? (
               <span className="text-red-400">今月の無料評価（3回）を使い切りました</span>
             ) : (
@@ -267,7 +271,7 @@ export default function Home() {
               </span>
             )}
           </p>
-          {remaining === 0 && (
+          {!isPremium && remaining === 0 && (
             <button onClick={handleUpgrade} className="text-gold-500 text-xs tracking-widest uppercase hover:text-gold-400 transition-colors">Upgrade → $4.99/mo</button>
           )}
         </div>
@@ -321,15 +325,17 @@ export default function Home() {
               )}
             </div>
 
-            <div className="p-6 border border-gold-600 border-opacity-20 bg-zinc-950 mb-6 text-center">
-              <p className="text-xs tracking-[0.3em] uppercase text-gold-500 mb-2">Premium Access</p>
-              <p className="text-zinc-400 text-sm mb-5 leading-relaxed">
-                Unlock unlimited monthly evaluations with Vivienne&apos;s full verdict.
-              </p>
-              <button onClick={handleUpgrade} className="btn-gold w-full py-4 text-sm tracking-widest">
-                Unlock Full Access — $4.99/mo
-              </button>
-            </div>
+            {!isPremium && (
+              <div className="p-6 border border-gold-600 border-opacity-20 bg-zinc-950 mb-6 text-center">
+                <p className="text-xs tracking-[0.3em] uppercase text-gold-500 mb-2">Premium Access</p>
+                <p className="text-zinc-400 text-sm mb-5 leading-relaxed">
+                  Unlock unlimited monthly evaluations with Vivienne&apos;s full verdict.
+                </p>
+                <button onClick={handleUpgrade} className="btn-gold w-full py-4 text-sm tracking-widest">
+                  Unlock Full Access — $4.99/mo
+                </button>
+              </div>
+            )}
 
             <div className="text-center">
               <button onClick={reset} className="text-zinc-600 text-xs tracking-[0.3em] uppercase hover:text-zinc-400 transition-colors border-b border-zinc-800 pb-1">
@@ -433,9 +439,9 @@ export default function Home() {
             {/* Submit */}
             <button
               onClick={handleSubmit}
-              disabled={!image || !selectedTheme || loading || remaining === 0}
+              disabled={!image || !selectedTheme || loading || (!isPremium && remaining === 0)}
               className={`w-full py-5 text-sm tracking-[0.3em] uppercase font-bold transition-all ${
-                image && selectedTheme && !loading && remaining > 0
+                image && selectedTheme && !loading && (isPremium || remaining > 0)
                   ? 'btn-gold'
                   : 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
               }`}
@@ -445,7 +451,7 @@ export default function Home() {
                   <span className="animate-spin text-lg">◐</span>
                   <span className="font-serif italic">Vivienne is deliberating...</span>
                 </span>
-              ) : remaining === 0 ? (
+              ) : !isPremium && remaining === 0 ? (
                 'No Evaluations Remaining This Month'
               ) : (
                 'Submit to Vivienne'

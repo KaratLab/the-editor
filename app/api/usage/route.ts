@@ -23,6 +23,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check premium status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_premium')
+      .eq('id', user.id)
+      .single()
+
+    const isPremium = profile?.is_premium ?? false
+
     // Count evaluations this month
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
@@ -36,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json({ count: count ?? 0 })
+    return NextResponse.json({ count: count ?? 0, isPremium })
   } catch (error) {
     console.error('Usage check error:', error)
     return NextResponse.json({ count: 0 })

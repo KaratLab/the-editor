@@ -66,24 +66,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check monthly usage limit
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
+    // Check premium status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_premium')
+      .eq('id', user.id)
+      .single()
 
-    const { count, error: countError } = await supabase
-      .from('evaluations')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .gte('created_at', startOfMonth.toISOString())
+    const isPremium = profile?.is_premium ?? false
 
-    if (countError) throw countError
+    // Check monthly usage limit (skip for premium users)
+    if (!isPremium) {
+      const startOfMonth = new Date()
+      startOfMonth.setDate(1)
+      startOfMonth.setHours(0, 0, 0, 0)
 
-    if ((count ?? 0) >= FREE_LIMIT) {
-      return NextResponse.json(
-        { error: 'Monthly limit reached' },
-        { status: 403 }
-      )
+      const { count, error: countError } = await supabase
+        .from('evaluations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString())
+
+      if (countError) throw countError
+
+      if ((count ?? 0) >= FREE_LIMIT) {
+        return NextResponse.json(
+          { error: 'Monthly limit reached' },
+          { status: 403 }
+        )
+      }
     }
 
     // Process image
