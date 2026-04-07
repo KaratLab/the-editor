@@ -33,15 +33,21 @@ export async function POST(req: NextRequest) {
       // 決済完了 → プレミアム付与
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+        console.log('checkout.session.completed received')
+        console.log('session.metadata:', JSON.stringify(session.metadata))
+        console.log('session.customer:', session.customer)
+        console.log('session.subscription:', session.subscription)
+
         const userId = session.metadata?.user_id
         const customerId = session.customer as string
         const subscriptionId = session.subscription as string
 
         if (!userId) {
-          console.error('No user_id in session metadata')
+          console.error('No user_id in session metadata - cannot update profile')
           break
         }
 
+        console.log(`Updating profile for user: ${userId}`)
         const { error } = await supabaseAdmin
           .from('profiles')
           .upsert({
@@ -52,8 +58,11 @@ export async function POST(req: NextRequest) {
             updated_at: new Date().toISOString(),
           })
 
-        if (error) console.error('Supabase upsert error:', error)
-        else console.log(`Premium granted to user: ${userId}`)
+        if (error) {
+          console.error('Supabase upsert error:', JSON.stringify(error))
+        } else {
+          console.log(`Premium granted successfully to user: ${userId}`)
+        }
         break
       }
 
