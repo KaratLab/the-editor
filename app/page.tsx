@@ -77,6 +77,9 @@ export default function Home() {
   const [usageCount, setUsageCount] = useState(0)
   const [usageLoading, setUsageLoading] = useState(false)
   const [isPremium, setIsPremium] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelLoading, setCancelLoading] = useState(false)
+  const [cancelSuccess, setCancelSuccess] = useState(false)
 
   useEffect(() => {
     setRuleIndex(Math.floor(Math.random() * VIVIENNE_RULES.length))
@@ -195,6 +198,28 @@ export default function Home() {
     setError(null)
   }
 
+  const handleCancel = async () => {
+    if (!accessToken) return
+    setCancelLoading(true)
+    try {
+      const res = await fetch('/api/cancel-subscription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCancelSuccess(true)
+        setShowCancelConfirm(false)
+      } else {
+        setError(data.error || 'Failed to cancel subscription.')
+      }
+    } catch {
+      setError('Failed to cancel subscription. Please try again.')
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
   const handleUpgrade = async () => {
     if (!accessToken) return
     try {
@@ -262,7 +287,9 @@ export default function Home() {
             {usageLoading ? (
               <span className="text-zinc-600">Loading...</span>
             ) : isPremium ? (
-              <span className="text-gold-500">✦ Premium — Unlimited Evaluations</span>
+              <span className="text-gold-500">
+                {cancelSuccess ? '✦ Premium — 次の請求期間終了時に解約されます' : '✦ Premium — Unlimited Evaluations'}
+              </span>
             ) : remaining === 0 ? (
               <span className="text-red-400">今月の無料評価（3回）を使い切りました</span>
             ) : (
@@ -274,8 +301,43 @@ export default function Home() {
           {!isPremium && remaining === 0 && (
             <button onClick={handleUpgrade} className="text-gold-500 text-xs tracking-widest uppercase hover:text-gold-400 transition-colors">Upgrade → $4.99/mo</button>
           )}
+          {isPremium && !cancelSuccess && (
+            <button
+              onClick={() => setShowCancelConfirm(true)}
+              className="text-zinc-600 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
+            >
+              解約する
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Cancel Confirm Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-6">
+          <div className="bg-zinc-950 border border-zinc-800 p-8 max-w-sm w-full text-center">
+            <p className="font-serif text-white text-lg mb-2">本当に解約しますか？</p>
+            <p className="text-zinc-500 text-xs tracking-wide mb-6">
+              現在の請求期間が終わるまでPremiumは継続されます。その後、無料プランに戻ります。
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="flex-1 py-3 border border-zinc-700 text-zinc-400 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={cancelLoading}
+                className="flex-1 py-3 border border-red-800 text-red-400 text-xs tracking-widest uppercase hover:border-red-600 transition-colors disabled:opacity-50"
+              >
+                {cancelLoading ? '処理中...' : '解約する'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-6 py-10">
 
