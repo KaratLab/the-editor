@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 const THEMES = [
@@ -268,12 +269,20 @@ export default function Home() {
             {userEmail && (
               <div className="text-right">
                 <p className="text-zinc-600 text-xs truncate max-w-[140px]">{userEmail}</p>
-                <button
-                  onClick={handleLogout}
-                  className="text-zinc-700 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
-                >
-                  Sign Out
-                </button>
+                <div className="flex gap-3 justify-end mt-1">
+                  <Link
+                    href="/wardrobe"
+                    className="text-zinc-600 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
+                  >
+                    Wardrobe
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-zinc-700 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
               </div>
             )}
           </div>

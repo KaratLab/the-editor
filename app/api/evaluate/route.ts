@@ -146,11 +146,33 @@ export async function POST(request: NextRequest) {
     const result = JSON.parse(jsonMatch[0])
     const stars = Math.min(5, Math.max(1, parseInt(result.stars)))
 
+    // Upload image to Supabase Storage
+    let image_url: string | null = null
+    try {
+      const ext = mimeType.split('/')[1] || 'jpg'
+      const filename = `${user.id}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('outfit-images')
+        .upload(filename, buffer, { contentType: mimeType })
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage
+          .from('outfit-images')
+          .getPublicUrl(filename)
+        image_url = urlData.publicUrl
+      }
+    } catch {
+      // 画像アップロード失敗しても評価は続行
+    }
+
     // Save evaluation to database
     await supabase.from('evaluations').insert({
       user_id: user.id,
       theme,
       stars,
+      image_url,
+      comment: result.comment,
+      advice: result.advice,
     })
 
     return NextResponse.json({
