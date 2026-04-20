@@ -55,6 +55,7 @@ export default function WardrobePage() {
         .from('evaluations')
         .select('*')
         .eq('user_id', session.user.id)
+        .not('image_url', 'is', null)
         .order('created_at', { ascending: false })
 
       if (!error && data) {

@@ -148,24 +148,20 @@ export async function POST(request: NextRequest) {
 
     // Upload image to Supabase Storage
     let image_url: string | null = null
-    try {
-      const ext = mimeType.split('/')[1] || 'jpg'
-      const filename = `${user.id}/${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('outfit-images')
-        .upload(filename, buffer, { contentType: mimeType })
+    const ext = mimeType.split('/')[1] || 'jpg'
+    const filename = `${user.id}/${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('outfit-images')
+      .upload(filename, buffer, { contentType: mimeType })
 
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage
-          .from('outfit-images')
-          .getPublicUrl(filename)
-        image_url = urlData.publicUrl
-      }
-    } catch {
-      // 画像アップロード失敗しても評価は続行
+    if (!uploadError) {
+      const { data: urlData } = supabase.storage
+        .from('outfit-images')
+        .getPublicUrl(filename)
+      image_url = urlData.publicUrl
     }
 
-    // Save evaluation to database
+    // Save evaluation to database (only if image was uploaded successfully)
     await supabase.from('evaluations').insert({
       user_id: user.id,
       theme,
