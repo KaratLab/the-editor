@@ -263,38 +263,33 @@ export default function Home() {
     <main className="min-h-screen bg-black">
 
       {/* Header */}
-      <header className="border-b border-zinc-900 px-6 py-5">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-serif tracking-[0.4em] uppercase gold-text">
+      <header className="border-b border-zinc-900 px-4 sm:px-6 py-4 sm:py-5">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-serif tracking-[0.3em] sm:tracking-[0.4em] uppercase gold-text whitespace-nowrap">
               The Editor
             </h1>
-            <p className="text-xs text-zinc-600 tracking-[0.3em] uppercase mt-1">
+            <p className="text-xs text-zinc-600 tracking-[0.2em] sm:tracking-[0.3em] uppercase mt-0.5">
               Fashion, Rated
             </p>
           </div>
-          <div className="text-right flex flex-col items-end gap-2">
-            <div>
-              <p className="text-zinc-500 text-xs tracking-widest uppercase">By</p>
-              <p className="font-serif text-zinc-300 text-sm tracking-widest uppercase">Vivienne</p>
-            </div>
+          <div className="flex flex-col items-end gap-1 sm:gap-2 shrink-0">
+            <p className="font-serif text-zinc-400 text-xs sm:text-sm tracking-widest uppercase">By Vivienne</p>
             {userEmail && (
-              <div className="text-right">
-                <p className="text-zinc-600 text-xs truncate max-w-[140px]">{userEmail}</p>
-                <div className="flex gap-3 justify-end mt-1">
-                  <Link
-                    href="/wardrobe"
-                    className="text-zinc-600 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
-                  >
-                    Wardrobe
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="text-zinc-700 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  href="/wardrobe"
+                  className="text-zinc-500 text-xs tracking-widest uppercase hover:text-zinc-300 transition-colors"
+                >
+                  Wardrobe
+                </Link>
+                <span className="text-zinc-800">|</span>
+                <button
+                  onClick={handleLogout}
+                  className="text-zinc-600 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
+                >
+                  Sign Out
+                </button>
               </div>
             )}
           </div>
@@ -302,8 +297,8 @@ export default function Home() {
       </header>
 
       {/* Usage Banner */}
-      <div className={`border-b px-6 py-3 ${!isPremium && remaining === 0 ? 'border-red-900 bg-red-950' : 'border-zinc-900 bg-zinc-950'}`}>
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+      <div className={`border-b px-4 sm:px-6 py-3 ${!isPremium && remaining === 0 ? 'border-red-900 bg-red-950' : 'border-zinc-900 bg-zinc-950'}`}>
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3 flex-wrap">
           <p className="text-xs tracking-[0.2em] uppercase">
             {usageLoading ? (
               <span className="loading-dots flex gap-1.5 items-center">
@@ -366,7 +361,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
         {/* ===== RESULT VIEW ===== */}
         {result && (
@@ -380,26 +375,26 @@ export default function Home() {
               <p className="font-serif text-zinc-500 text-xs tracking-[0.3em] uppercase">The Verdict</p>
             </div>
 
-            <div className="vivienne-card rounded-none p-8 mb-8">
-              <div className="flex justify-center gap-2 mb-3">
+            <div className="vivienne-card rounded-none p-5 sm:p-8 mb-8">
+              <div className="flex justify-center gap-1.5 sm:gap-2 mb-3">
                 {STARS.map(s => (
-                  <span key={s} className={`text-4xl ${s <= result.stars ? 'star-filled' : 'star-empty'}`}>★</span>
+                  <span key={s} className={`text-3xl sm:text-4xl ${s <= result.stars ? 'star-filled' : 'star-empty'}`}>★</span>
                 ))}
               </div>
-              <div className="text-center mb-8">
-                <span className="font-serif text-white text-4xl block leading-none mb-1">{result.stars} <span className="text-zinc-600 text-2xl">/ 5</span></span>
+              <div className="text-center mb-6 sm:mb-8">
+                <span className="font-serif text-white text-3xl sm:text-4xl block leading-none mb-1">{result.stars} <span className="text-zinc-600 text-xl sm:text-2xl">/ 5</span></span>
                 <span className="font-serif text-zinc-500 text-xs tracking-[0.25em] uppercase">Vivienne&apos;s Verdict</span>
               </div>
 
               <hr className="gold-divider" />
 
-              <blockquote className="font-serif text-xl text-zinc-100 italic leading-relaxed my-8 text-center">
+              <blockquote className="font-serif text-lg sm:text-xl text-zinc-100 italic leading-relaxed my-6 sm:my-8 text-center">
                 &ldquo;{result.comment}&rdquo;
               </blockquote>
               <p className="text-center text-zinc-600 text-xs tracking-[0.3em] uppercase">— Vivienne</p>
 
               {result.advice && (
-                <div className="mt-8 px-6 py-5 bg-zinc-950 border-l-2 border-gold-600 text-left">
+                <div className="mt-6 sm:mt-8 px-4 sm:px-6 py-4 sm:py-5 bg-zinc-950 border-l-2 border-gold-600 text-left">
                   <p className="text-gold-500 text-xs tracking-[0.3em] uppercase mb-3">Vivienne&apos;s Advice</p>
                   <p className="text-zinc-300 text-sm leading-relaxed">{result.advice}</p>
                 </div>
@@ -449,13 +444,13 @@ export default function Home() {
                 </div>
               </div>
 
-              <h2 className="font-serif text-4xl text-white tracking-wide mb-2">Vivienne</h2>
+              <h2 className="font-serif text-3xl sm:text-4xl text-white tracking-wide mb-2">Vivienne</h2>
               <p className="text-zinc-600 text-xs tracking-[0.35em] uppercase mb-1">Editor-in-Chief</p>
-              <p className="text-zinc-700 text-xs tracking-[0.2em] uppercase mb-8">30 Years in Fashion · Zero Tolerance for Mediocrity</p>
+              <p className="text-zinc-700 text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-8">30 Years in Fashion · Zero Tolerance for Mediocrity</p>
 
               <hr className="gold-divider" />
 
-              <blockquote className="font-serif text-2xl text-zinc-100 italic leading-relaxed my-8 px-4">
+              <blockquote className="font-serif text-xl sm:text-2xl text-zinc-100 italic leading-relaxed my-6 sm:my-8 px-2 sm:px-4">
                 &ldquo;Impress me. I&apos;ve been waiting.&rdquo;
               </blockquote>
 
@@ -501,7 +496,7 @@ export default function Home() {
               </div>
               <div
                 {...getRootProps()}
-                className={`upload-zone p-10 text-center cursor-pointer transition-all ${isDragActive ? 'bg-zinc-900' : ''}`}
+                className={`upload-zone p-6 sm:p-10 text-center cursor-pointer transition-all ${isDragActive ? 'bg-zinc-900' : ''}`}
               >
                 <input {...getInputProps()} />
                 {image ? (

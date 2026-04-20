@@ -83,7 +83,7 @@ export default function AuthPage() {
         </div>
 
         {/* Form */}
-        <div className="border border-zinc-800 p-8">
+        <div className="border border-zinc-800 p-6 sm:p-8">
           <h2 className="font-serif text-white text-lg tracking-[0.2em] uppercase text-center mb-8">
             {titles[mode]}
           </h2>

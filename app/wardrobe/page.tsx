@@ -100,7 +100,7 @@ export default function WardrobePage() {
   return (
     <main className="min-h-screen bg-black">
       {/* Header */}
-      <header className="border-b border-zinc-900 px-6 py-5">
+      <header className="border-b border-zinc-900 px-4 sm:px-6 py-4 sm:py-5">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-serif tracking-[0.4em] uppercase gold-text">
@@ -119,7 +119,7 @@ export default function WardrobePage() {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-10">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {loading ? (
           <div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -174,7 +174,7 @@ export default function WardrobePage() {
           onClick={closeModal}
         >
           <div
-            className="bg-zinc-950 border border-zinc-800 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            className="bg-zinc-950 border border-zinc-800 max-w-lg w-full max-h-[92vh] overflow-y-auto mx-2"
             onClick={(e) => e.stopPropagation()}
           >
             {selected.image_url && (
@@ -184,7 +184,7 @@ export default function WardrobePage() {
                 className="w-full aspect-square object-cover"
               />
             )}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-gold-500 text-lg tracking-wider">{'★'.repeat(selected.stars)}{'☆'.repeat(5 - selected.stars)}</p>
                 <p className="text-zinc-500 text-xs">{THEME_LABELS[selected.theme] || selected.theme}</p>
