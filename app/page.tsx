@@ -82,6 +82,8 @@ export default function Home() {
   const [cancelLoading, setCancelLoading] = useState(false)
   const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
   const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deleteAccountLoading, setDeleteAccountLoading] = useState(false)
 
   useEffect(() => {
     setRuleIndex(Math.floor(Math.random() * VIVIENNE_RULES.length))
@@ -138,6 +140,29 @@ export default function Home() {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/auth')
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!accessToken) return
+    setDeleteAccountLoading(true)
+    try {
+      const res = await fetch('/api/delete-account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      if (res.ok) {
+        await supabase.auth.signOut()
+        router.push('/auth')
+      } else {
+        setError('Failed to delete account. Please try again.')
+        setShowDeleteAccount(false)
+      }
+    } catch {
+      setError('Failed to delete account. Please try again.')
+      setShowDeleteAccount(false)
+    } finally {
+      setDeleteAccountLoading(false)
+    }
   }
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -290,6 +315,13 @@ export default function Home() {
                 >
                   Sign Out
                 </button>
+                <span className="text-zinc-800">|</span>
+                <button
+                  onClick={() => setShowDeleteAccount(true)}
+                  className="text-zinc-700 text-xs tracking-widest uppercase hover:text-red-800 transition-colors"
+                >
+                  Delete Account
+                </button>
               </div>
             )}
           </div>
@@ -355,6 +387,34 @@ export default function Home() {
                 className="flex-1 py-3 border border-red-800 text-red-400 text-xs tracking-widest uppercase hover:border-red-600 transition-colors disabled:opacity-50"
               >
                 {cancelLoading ? 'Processing...' : 'Cancel Plan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteAccount && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-6">
+          <div className="bg-zinc-950 border border-zinc-800 p-8 max-w-sm w-full text-center">
+            <p className="font-serif text-white text-lg mb-2">Delete your account?</p>
+            <p className="text-zinc-500 text-xs tracking-wide leading-relaxed mb-6">
+              This will permanently delete your account, all evaluations, and photos. If you have an active subscription, it will be cancelled immediately. This action cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteAccount(false)}
+                disabled={deleteAccountLoading}
+                className="flex-1 py-3 border border-zinc-700 text-zinc-400 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors disabled:opacity-50"
+              >
+                Keep Account
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteAccountLoading}
+                className="flex-1 py-3 border border-red-800 text-red-400 text-xs tracking-widest uppercase hover:border-red-600 transition-colors disabled:opacity-50"
+              >
+                {deleteAccountLoading ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

@@ -15,6 +15,16 @@ const THEME_LABELS: Record<string, string> = {
   street: 'Street Style 👟',
 }
 
+const THEME_ICONS: Record<string, string> = {
+  business: '💼',
+  casual: '☕',
+  date: '🥂',
+  party: '✨',
+  wedding: '💍',
+  funeral: '🖤',
+  street: '👟',
+}
+
 type Evaluation = {
   id: string
   theme: string
@@ -154,7 +164,7 @@ export default function WardrobePage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-3xl">{THEME_LABELS[ev.theme]?.split(' ')[1] || '👗'}</span>
+                    <span className="text-3xl">{THEME_ICONS[ev.theme] || '👗'}</span>
                   </div>
                 )}
                 <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-2 py-1.5">
