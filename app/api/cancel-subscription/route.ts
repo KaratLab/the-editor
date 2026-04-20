@@ -37,11 +37,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Stripe で期間終了時に解約するよう設定
-    await stripe.subscriptions.update(profile.stripe_subscription_id, {
-      cancel_at_period_end: true,
-    })
+    const subscription = await stripe.subscriptions.update(
+      profile.stripe_subscription_id,
+      { cancel_at_period_end: true }
+    )
 
-    return NextResponse.json({ success: true })
+    // 期間終了日を返す
+    const subscriptionEndDate = new Date(
+      subscription.current_period_end * 1000
+    ).toISOString()
+
+    return NextResponse.json({ success: true, subscriptionEndDate })
   } catch (error: unknown) {
     const err = error as { message?: string }
     console.error('Cancel subscription error:', err?.message)

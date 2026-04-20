@@ -30,6 +30,8 @@ export default function WardrobePage() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Evaluation | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -52,6 +54,48 @@ export default function WardrobePage() {
     }
     load()
   }, [router])
+
+  const handleDelete = async () => {
+    if (!selected) return
+    setDeleting(true)
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/auth')
+        return
+      }
+
+      const res = await fetch('/api/delete-evaluation', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          evaluationId: selected.id,
+          imageUrl: selected.image_url,
+        }),
+      })
+
+      if (res.ok) {
+        setEvaluations((prev) => prev.filter((ev) => ev.id !== selected.id))
+        setSelected(null)
+        setConfirmDelete(false)
+      } else {
+        alert('Failed to delete. Please try again.')
+      }
+    } catch {
+      alert('Failed to delete. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const closeModal = () => {
+    setSelected(null)
+    setConfirmDelete(false)
+  }
 
   return (
     <main className="min-h-screen bg-black">
@@ -77,7 +121,16 @@ export default function WardrobePage() {
 
       <div className="max-w-2xl mx-auto px-6 py-10">
         {loading ? (
-          <p className="text-zinc-600 font-serif italic text-center">Vivienne is reviewing your history...</p>
+          <div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="aspect-square skeleton rounded-none" />
+              ))}
+            </div>
+            <div className="flex justify-center gap-1.5 mt-8 loading-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
         ) : evaluations.length === 0 ? (
           <div className="text-center py-20">
             <p className="font-serif text-zinc-500 italic text-lg mb-4">No evaluations yet.</p>
@@ -90,7 +143,7 @@ export default function WardrobePage() {
             {evaluations.map((ev) => (
               <button
                 key={ev.id}
-                onClick={() => setSelected(ev)}
+                onClick={() => { setSelected(ev); setConfirmDelete(false) }}
                 className="group relative aspect-square bg-zinc-950 border border-zinc-800 overflow-hidden hover:border-gold-600 transition-colors"
               >
                 {ev.image_url ? (
@@ -118,7 +171,7 @@ export default function WardrobePage() {
       {selected && (
         <div
           className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 px-4 py-8"
-          onClick={() => setSelected(null)}
+          onClick={closeModal}
         >
           <div
             className="bg-zinc-950 border border-zinc-800 max-w-lg w-full max-h-[90vh] overflow-y-auto"
@@ -149,14 +202,48 @@ export default function WardrobePage() {
                 </div>
               )}
               <p className="text-zinc-700 text-xs mt-4">
-                {new Date(selected.created_at).toLocaleDateString('ja-JP')}
+                {new Date(selected.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </p>
-              <button
-                onClick={() => setSelected(null)}
-                className="mt-4 w-full py-2 border border-zinc-700 text-zinc-500 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors"
-              >
-                Close
-              </button>
+
+              {/* Delete confirmation */}
+              {confirmDelete ? (
+                <div className="mt-6 border border-zinc-700 p-4">
+                  <p className="text-zinc-400 text-xs tracking-wider text-center mb-4">
+                    Remove this look permanently?
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="flex-1 py-2 border border-zinc-700 text-zinc-500 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors"
+                      disabled={deleting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="flex-1 py-2 border border-red-900 text-red-600 text-xs tracking-widest uppercase hover:border-red-700 hover:text-red-500 transition-colors disabled:opacity-50"
+                      disabled={deleting}
+                    >
+                      {deleting ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 py-2 border border-zinc-700 text-zinc-500 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="py-2 px-4 border border-zinc-800 text-zinc-600 text-xs tracking-widest uppercase hover:border-red-900 hover:text-red-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

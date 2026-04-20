@@ -80,7 +80,8 @@ export default function Home() {
   const [isPremium, setIsPremium] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [cancelLoading, setCancelLoading] = useState(false)
-  const [cancelSuccess, setCancelSuccess] = useState(false)
+  const [cancelAtPeriodEnd, setCancelAtPeriodEnd] = useState(false)
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(null)
 
   useEffect(() => {
     setRuleIndex(Math.floor(Math.random() * VIVIENNE_RULES.length))
@@ -124,6 +125,8 @@ export default function Home() {
         const data = await res.json()
         setUsageCount(data.count)
         setIsPremium(data.isPremium ?? false)
+        setCancelAtPeriodEnd(data.cancelAtPeriodEnd ?? false)
+        setSubscriptionEndDate(data.subscriptionEndDate ?? null)
       }
     } catch {
       // ignore
@@ -157,7 +160,7 @@ export default function Home() {
   const handleSubmit = async () => {
     if (!image || !imageFile || !selectedTheme || !accessToken) return
     if (!isPremium && usageCount >= FREE_LIMIT) {
-      setError('今月の無料評価（3回）を使い切りました。来月またお試しください。')
+      setError('You have used all 3 free evaluations this month. Come back next month.')
       return
     }
     setLoading(true)
@@ -175,7 +178,7 @@ export default function Home() {
       })
 
       if (res.status === 403) {
-        setError('今月の無料評価（3回）を使い切りました。来月またお試しください。')
+        setError('You have used all 3 free evaluations this month. Come back next month.')
         setUsageCount(FREE_LIMIT)
         return
       }
@@ -209,7 +212,8 @@ export default function Home() {
       })
       const data = await res.json()
       if (data.success) {
-        setCancelSuccess(true)
+        setCancelAtPeriodEnd(true)
+        setSubscriptionEndDate(data.subscriptionEndDate ?? null)
         setShowCancelConfirm(false)
       } else {
         setError(data.error || 'Failed to cancel subscription.')
@@ -240,7 +244,15 @@ export default function Home() {
   if (authLoading) {
     return (
       <main className="min-h-screen bg-black flex items-center justify-center">
-        <p className="font-serif text-zinc-600 italic text-lg">Vivienne is preparing...</p>
+        <div className="text-center">
+          <div className="ring-pulse inline-block w-16 h-16 rounded-full border border-gold-600 mb-6 flex items-center justify-center">
+            <span className="text-2xl">✦</span>
+          </div>
+          <p className="font-serif text-zinc-500 italic text-sm tracking-widest">Vivienne is preparing...</p>
+          <div className="loading-dots flex justify-center gap-1.5 mt-4">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
       </main>
     )
   }
@@ -294,28 +306,34 @@ export default function Home() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <p className="text-xs tracking-[0.2em] uppercase">
             {usageLoading ? (
-              <span className="text-zinc-600">Loading...</span>
+              <span className="loading-dots flex gap-1.5 items-center">
+                <span></span><span></span><span></span>
+              </span>
             ) : isPremium ? (
               <span className="text-gold-500">
-                {cancelSuccess ? '✦ Premium — 次の請求期間終了時に解約されます' : '✦ Premium — Unlimited Evaluations'}
+                {cancelAtPeriodEnd && subscriptionEndDate
+                  ? `✦ Premium — Active until ${new Date(subscriptionEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`
+                  : cancelAtPeriodEnd
+                  ? '✦ Premium — Cancels at end of billing period'
+                  : '✦ Premium — Unlimited Evaluations'}
               </span>
             ) : remaining === 0 ? (
-              <span className="text-red-400">今月の無料評価（3回）を使い切りました</span>
+              <span className="text-red-400">No evaluations remaining this month</span>
             ) : (
               <span className="text-zinc-500">
-                今月の残り評価: <span className="text-white font-bold">{remaining}</span> / {FREE_LIMIT}
+                Evaluations remaining: <span className="text-white font-bold">{remaining}</span> / {FREE_LIMIT}
               </span>
             )}
           </p>
           {!isPremium && remaining === 0 && (
             <button onClick={handleUpgrade} className="text-gold-500 text-xs tracking-widest uppercase hover:text-gold-400 transition-colors">Upgrade → $4.99/mo</button>
           )}
-          {isPremium && !cancelSuccess && (
+          {isPremium && !cancelAtPeriodEnd && (
             <button
               onClick={() => setShowCancelConfirm(true)}
               className="text-zinc-600 text-xs tracking-widest uppercase hover:text-zinc-400 transition-colors"
             >
-              解約する
+              Cancel Plan
             </button>
           )}
         </div>
@@ -325,23 +343,23 @@ export default function Home() {
       {showCancelConfirm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-6">
           <div className="bg-zinc-950 border border-zinc-800 p-8 max-w-sm w-full text-center">
-            <p className="font-serif text-white text-lg mb-2">本当に解約しますか？</p>
+            <p className="font-serif text-white text-lg mb-2">Cancel your subscription?</p>
             <p className="text-zinc-500 text-xs tracking-wide mb-6">
-              現在の請求期間が終わるまでPremiumは継続されます。その後、無料プランに戻ります。
+              You will keep Premium access until the end of your current billing period. After that, your account reverts to the free plan.
             </p>
             <div className="flex gap-4">
               <button
                 onClick={() => setShowCancelConfirm(false)}
                 className="flex-1 py-3 border border-zinc-700 text-zinc-400 text-xs tracking-widest uppercase hover:border-zinc-500 transition-colors"
               >
-                キャンセル
+                Keep Plan
               </button>
               <button
                 onClick={handleCancel}
                 disabled={cancelLoading}
                 className="flex-1 py-3 border border-red-800 text-red-400 text-xs tracking-widest uppercase hover:border-red-600 transition-colors disabled:opacity-50"
               >
-                {cancelLoading ? '処理中...' : '解約する'}
+                {cancelLoading ? 'Processing...' : 'Cancel Plan'}
               </button>
             </div>
           </div>
@@ -352,7 +370,7 @@ export default function Home() {
 
         {/* ===== RESULT VIEW ===== */}
         {result && (
-          <div>
+          <div className="fade-in">
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
                 <div className="w-28 h-28 rounded-full overflow-hidden border border-gold-600 flex items-center justify-center bg-zinc-950">
@@ -519,8 +537,10 @@ export default function Home() {
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-3">
-                  <span className="animate-spin text-lg">◐</span>
-                  <span className="font-serif italic">Vivienne is deliberating...</span>
+                  <span className="font-serif italic tracking-widest">Vivienne is deliberating</span>
+                  <span className="loading-dots flex gap-1">
+                    <span></span><span></span><span></span>
+                  </span>
                 </span>
               ) : !isPremium && remaining === 0 ? (
                 'No Evaluations Remaining This Month'
