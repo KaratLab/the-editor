@@ -587,7 +587,9 @@ export default function Home() {
               className={`w-full py-5 text-sm tracking-[0.3em] uppercase font-bold transition-all ${
                 image && selectedTheme && !loading && (isPremium || remaining > 0)
                   ? 'btn-gold'
-                  : 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
+                  : (!isPremium && remaining === 0)
+                  ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
+                  : 'bg-zinc-900 text-zinc-500 cursor-not-allowed'
               }`}
             >
               {loading ? (
