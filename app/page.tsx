@@ -599,6 +599,10 @@ export default function Home() {
                 </span>
               ) : !isPremium && remaining === 0 ? (
                 'No Evaluations Remaining This Month'
+              ) : !selectedTheme ? (
+                'Select a Theme to Continue'
+              ) : !image ? (
+                'Upload a Photo to Continue'
               ) : (
                 'Submit to Vivienne'
               )}
