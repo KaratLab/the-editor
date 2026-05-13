@@ -521,37 +521,11 @@ export default function Home() {
 
             </div>
 
-            {/* Theme Selection */}
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="flex-1 h-px bg-zinc-800"></div>
-                <h3 className="font-serif text-lg text-white tracking-[0.2em] uppercase">1. Select Your Theme</h3>
-                <div className="flex-1 h-px bg-zinc-800"></div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {THEMES.map(theme => (
-                  <button
-                    key={theme.id}
-                    onClick={() => setSelectedTheme(theme.id)}
-                    className={`p-4 text-left border transition-all duration-200 ${
-                      selectedTheme === theme.id
-                        ? 'border-gold-500 bg-zinc-900'
-                        : 'border-zinc-800 hover:border-zinc-600'
-                    }`}
-                  >
-                    <span className="text-xl block mb-1">{theme.icon}</span>
-                    <span className="text-sm font-serif text-white block">{theme.label}</span>
-                    <span className="text-xs text-zinc-600">{theme.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Upload */}
             <div className="mb-8">
               <div className="flex items-center gap-3 mb-5">
                 <div className="flex-1 h-px bg-zinc-800"></div>
-                <h3 className="font-serif text-lg text-white tracking-[0.2em] uppercase">2. Submit Your Look</h3>
+                <h3 className="font-serif text-lg text-white tracking-[0.2em] uppercase">1. Upload Your Photo</h3>
                 <div className="flex-1 h-px bg-zinc-800"></div>
               </div>
               <div
@@ -580,6 +554,38 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Theme Selection */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="flex-1 h-px bg-zinc-800"></div>
+                <h3 className={`font-serif text-lg tracking-[0.2em] uppercase ${image ? 'text-white' : 'text-zinc-600'}`}>2. Select Your Theme</h3>
+                <div className="flex-1 h-px bg-zinc-800"></div>
+              </div>
+              {!image ? (
+                <div className="border border-dashed border-zinc-800 p-6 text-center">
+                  <p className="text-zinc-600 font-serif italic text-sm">Upload your photo above to select a theme.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {THEMES.map(theme => (
+                    <button
+                      key={theme.id}
+                      onClick={() => setSelectedTheme(theme.id)}
+                      className={`p-4 text-left border transition-all duration-200 ${
+                        selectedTheme === theme.id
+                          ? 'border-gold-500 bg-zinc-900'
+                          : 'border-zinc-800 hover:border-zinc-600'
+                      }`}
+                    >
+                      <span className="text-xl block mb-1">{theme.icon}</span>
+                      <span className="text-sm font-serif text-white block">{theme.label}</span>
+                      <span className="text-xs text-zinc-600">{theme.description}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Submit */}
             <button
               onClick={handleSubmit}
@@ -587,9 +593,7 @@ export default function Home() {
               className={`w-full py-5 text-sm tracking-[0.3em] uppercase font-bold transition-all ${
                 image && selectedTheme && !loading && (isPremium || remaining > 0)
                   ? 'btn-gold'
-                  : (!isPremium && remaining === 0)
-                  ? 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
-                  : 'bg-zinc-900 text-zinc-500 cursor-not-allowed'
+                  : 'bg-zinc-900 text-zinc-700 cursor-not-allowed'
               }`}
             >
               {loading ? (
@@ -601,14 +605,11 @@ export default function Home() {
                 </span>
               ) : !isPremium && remaining === 0 ? (
                 'No Evaluations Remaining This Month'
-              ) : !selectedTheme ? (
-                'Select a Theme to Continue'
-              ) : !image ? (
-                'Upload a Photo to Continue'
               ) : (
                 'Submit to Vivienne'
               )}
             </button>
+
 
             {error && (
               <p className="mt-4 text-center text-red-500 text-sm font-serif italic">{error}</p>
