@@ -1,10 +1,3 @@
-完璧です！`the-editor / app / landing / page.tsx` となっていますね。
-
-次に、コードエディタ部分（「Enter file contents here」のところ）をクリックして、以下のコードを全て貼り付けてください。
-
-先ほどダウンロードした `landing_page.tsx` ファイルの内容です：
-
-```tsx
 'use client'
 
 import Link from 'next/link'
