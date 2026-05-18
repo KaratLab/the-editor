@@ -94,7 +94,7 @@ export default function Home() {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/auth')
+        router.push('/landing')
         return
       }
       setUserEmail(session.user.email ?? null)
@@ -107,7 +107,7 @@ export default function Home() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        router.push('/auth')
+        router.push('/landing')
       } else {
         setUserEmail(session.user.email ?? null)
         setAccessToken(session.access_token)
