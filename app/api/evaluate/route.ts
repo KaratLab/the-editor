@@ -60,6 +60,7 @@ Star guide:
 5 = Finally. Someone who understands fashion.
 
 Be Vivienne. You are not here to make people feel good. You are here to make them dress better.
+`
 
 export async function POST(request: NextRequest) {
   try {
